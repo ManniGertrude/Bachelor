@@ -1,64 +1,63 @@
-import csv
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.optimize import curve_fit
+import scipy.odr as odr
+from sklearn.metrics import r2_score
+import pandas as pd
+import os
+
+def lin(Params, x):
+    return Params[0] * x + Params[1]
+
+plt.subplot()
 
 # Datei einlesen
-file_path = 'Arduino Testrun/verify_voltage.csv'
+path = os.path.dirname(__file__)
+file_path = f'{path}/verify_voltage.csv'
 
-# Daten speichern
-v0_values = []
-pin_values = []
+data = pd.read_csv(file_path, delimiter=',', header=0, decimal='.', index_col=0)
+data = data.dropna()
 
-with open(file_path, 'r') as csvfile:
-    reader = csv.reader(csvfile)
-    headers = next(reader)  # Überspringe die Kopfzeile
+
+data = data.T
+datax = []
+datay = []
+datayerr = []
+for column in data.columns:
+    # # prints mean and std for latex table
+    # print(f'{column} & {np.mean(data[column])*4.737/5:.4f} $\\pm$ {np.std(data[column].values*4.737/5):.2g} & {100*(abs(column - np.mean(data[column])*4.737/5)/column):.2g} & {max(data[column]) - min(data[column]):.3f}\\\\')
     
-    for row in reader:
-        # Überspringe leere oder ungültige Zeilen
-        if not row or any(cell.strip() == '' for cell in row):
-            continue
-        try:
-            v0_values.append(float(row[0]))  # Grundwert (V0)
-            pin_values.append([float(value) for value in row[1:]])  # Werte der Pins
-        except ValueError:
-            print(f"Ungültige Zeile übersprungen: {row}")
-            continue
+    # # prints raw data for latex table
+    # values = []
+    # for i in range(len(data[column])):
+    #     values.append(f"{data[column][i]}")
+    #     values.append("&")
+    # values_string = " ".join(values[:-1])
+    # print(f"{values_string} \\\\")
+    # print([column]*16, data[column].values)
+    
+    # plots the data
+    datax.append([column]*16)
+    datay.append(data[column].values*4.737/5)
+    datayerr.append(np.std(data[column].values)*4.737/5)
+    plt.errorbar([column]*16, data[column].values*4.737/5, xerr=0.0005*column + 0.005, yerr=np.std(data[column].values)*4.737/5 , capsize=3, linestyle='None',  fmt='.', label=f'{column} V')
 
-# Fehlerberechnung
-v0_values = np.array(v0_values)
-pin_values = np.array(pin_values)
+lin_values = np.linspace(0, 5, 10000)
+odr_model = odr.Model(lin)
+odr_data = odr.RealData(datax, datay, sx=0.0005*np.array(datax) + 0.005, sy=np.std(datay)*np.ones(len(datax)))
+odr_fit = odr.ODR(odr_data, odr_model, beta0=[1., 0.])
+odr_out = odr_fit.run()
+print(odr_out.beta, odr_out.sd_beta)
 
-print(v0_values)
-# Fit-Funktion definieren
-def linear_fit(x, a, b):
-    return a * x + b
+chi2 = np.sum(((lin(odr_out.beta, datax) - datay) / datayerr) ** 2)
 
-# Curve-Fit für alle Pins zusammen durchführen
-popt, pcov = curve_fit(linear_fit, )
-popt_err = np.sqrt(np.diag(pcov))
-# Fit-Ergebnisse ausgeben
-print(f"Fit-Ergebnisse: a = {popt[0]:.4g}, b = {popt[1]:.4g}")
-print(f"Kovarianzmatrix:{popt_err}")
-
-# Fit-Linie berechnen
-fit_x = np.linspace(min(v0_values), max(v0_values), 100)
-fit_y = linear_fit(fit_x, *popt)
-
-# Fehler für jeden Pin plotten
-for pin_index in range(pin_values.shape[1]):
-    plt.errorbar(x=v0_values, y=pin_values[:, pin_index], xerr=0.001, yerr=(0.005 + 0.0005 * v0_values),
-                linestyle='none', capsize=3)
-
-# Fit-Linie plotten
-plt.plot(fit_x, fit_y, 'r-', label=f'Gesamt-Fit $(a={popt[0]:.4f}\pm{popt_err[0]:.4f}, b={popt[1]:.4f}\pm{popt_err[1]:.4f})$')
-
-# Diagramm beschriften
-plt.title('Spannungsvergleich der Pins gegen $V_0$')
-plt.xlabel('Angelegte Spannung (V)')
-plt.ylabel('Abweichung der gemessenen Spannung (V)')
 plt.legend()
+plt.plot(lin_values, lin_values, label='Theorie', color='red')
+plt.plot(lin_values, lin(odr_out.beta, lin_values), label='fittet data', color='black', linestyle='--', alpha=0.8)
+plt.xlabel('set value [V]', fontsize=12)
+plt.ylabel('measured value [V]', fontsize=12)
+plt.grid()
+plt.savefig(f'{path}/analyse_voltage_lin.pdf')
 plt.xscale('log')
 plt.grid()
-plt.savefig('Arduino Testrun/analyse_voltage.pdf')
+plt.savefig('ArdiTesti/analyse_voltage.pdf')
 plt.show
