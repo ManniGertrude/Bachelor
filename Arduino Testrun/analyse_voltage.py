@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.odr as odr
+from sklearn.metrics import r2_score
 import pandas as pd
 import os
 
@@ -44,12 +45,14 @@ lin_values = np.linspace(0, 5, 10000)
 odr_model = odr.Model(lin)
 odr_data = odr.RealData(datax, datay, sx=0.0005*np.array(datax) + 0.005, sy=np.std(datay)*np.ones(len(datax)))
 odr_fit = odr.ODR(odr_data, odr_model, beta0=[1., 0.])
-odr_output = odr_fit.run()
-print(odr_output.beta)
+odr_out = odr_fit.run()
+print(odr_out.beta, odr_out.sd_beta)
+
+chi2 = np.sum(((lin(odr_out.beta, datax) - datay) / datayerr) ** 2)
 
 plt.legend()
 plt.plot(lin_values, lin_values, label='Theorie', color='red')
-plt.plot(lin_values, lin(odr_output.beta, lin_values), label='fittet data', color='black', linestyle='--', alpha=0.8)
+plt.plot(lin_values, lin(odr_out.beta, lin_values), label='fittet data', color='black', linestyle='--', alpha=0.8)
 plt.xlabel('set value [V]', fontsize=12)
 plt.ylabel('measured value [V]', fontsize=12)
 plt.grid()
