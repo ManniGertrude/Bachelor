@@ -26,28 +26,25 @@ def arduino_power_plot(path, output_path, infostring=None):
                 ax2 = ax1.twinx()
                 
                 df = pd.read_csv(f'{root}/{data_file}')
-                ax2.plot(df['DAC_Value_lit'].values, 1000*df['vdda_curr'].values, color = 'navy', label='vdda current', marker='^', alpha=0.8)
-                ax2.plot(df['DAC_Value_lit'].values, 1000*df['vddd_curr'].values, color = 'slateblue', label='vddd current', marker='p', alpha=0.8)    
-                ax1.plot(df['DAC_Value_lit'].values, df['DAC_Value_exp'].values*5/4.735, color = 'crimson', label='real DAC voltage', marker='o', alpha=0.8)
+                ax2.plot(df['DAC_set_value'].values, 1000*df['vdda_curr'].values, color = 'navy', label='vdda current', marker='o', alpha=0.8)
+                ax2.plot(df['DAC_set_value'].values, 1000*df['vddd_curr'].values, color = 'slateblue', label='vddd current', marker='o', alpha=0.8)    
+                ax1.plot(df['DAC_set_value'].values, df['DAC_measured'].values*5/4.735, color = 'crimson', label='DAC_measured', marker='o', alpha=0.8)
                 
                 handles1, labels1 = ax1.get_legend_handles_labels()
                 handles2, labels2 = ax2.get_legend_handles_labels()
                 handles = handles1 + handles2
                 labels = labels1 + labels2
                 
-                ax1.set_title(f'DAC value analysis and powermonitoring', color = TITLE_COLOR, fontsize=14)
-                ax1.set_xlabel('set DAC voltage / ?', fontsize=12)
-                ax1.set_ylabel('real DAC voltage / V', color = 'crimson', fontsize=12)
-                ax2.set_ylabel('supplied current / mA', color = 'navy', fontsize = 12)
+                ax1.set_title(f'DAC analysis: {df["DAC_name"][0]}', color = TITLE_COLOR, fontsize=14)
+                ax1.set_xlabel('DAC_value / DAC', fontsize=12)
+                ax1.set_ylabel('DAC_measured / V', color = 'crimson', fontsize=12)
+                ax2.set_ylabel('current / mA', color = 'navy', fontsize = 12)
 
                 ax1.tick_params(axis='y', labelcolor='crimson')
                 ax2.tick_params(axis='y', labelcolor='navy')
 
                 ax1.legend(handles, labels,  title = infostring, loc='upper left')
-                ax1.set_ylim(0, 1.2)
-                
-                # fig.text(0.1, 0.92, "Run2021", fontsize=12, color=TEXT_COLOR)
-                # fig.text(0.7, 0.92, 'bla bla bla', fontsize=12, color=TEXT_COLOR)
+                ax1.set_ylim(0, max(df['DAC_measured'].values*5/4.735)*1.05)
                 
                 ax1.grid()
                 pdf.savefig(fig, bbox_inches='tight')
