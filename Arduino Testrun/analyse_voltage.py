@@ -47,7 +47,7 @@ odr_data = odr.RealData(datax, datay, sx=0.0005*np.array(datax) + 0.005, sy=np.s
 odr_fit = odr.ODR(odr_data, odr_model, beta0=[1., 0.])
 odr_out = odr_fit.run()
 print(odr_out.beta, odr_out.sd_beta)
-
+print(type(odr_out.beta))
 chi2 = np.sum(((lin(odr_out.beta, datax) - datay) / datayerr) ** 2)
 
 plt.legend()
