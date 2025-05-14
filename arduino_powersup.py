@@ -154,11 +154,9 @@ def read_hw_mean(hw, channel1=1, channel2=2, n = 24):
         hw_data_dict[hw_inputs[i]] = float(np.mean(hw_data_dict[hw_inputs[i]])) 
     return hw_data_dict
 
-def DAC_comparison_plot(path, ):
+def DAC_comparison_plot(path):
     keys = ['IPDAC', 'VNDel', 'VNBiasRec', 'IPBiasRec', 'IBLRes', 'VN', 'INFB', 'VNFoll', 'IPLoad', 'VNComp']
     data_dict = {key:[[],[],[],[],[]] for key in keys}
-    TEXT_COLOR = '#07529a'
-    TITLE_COLOR = '#07529a'
     
     for root, dirs, files in os.walk(path):
         if root[-9:] == "dac_power":
@@ -180,15 +178,16 @@ def DAC_comparison_plot(path, ):
         for key in keys:
             fig, ax = plt.subplots()
             for i in range(len(data_dict[key][0])):
-                ax.errorbar(data_dict[key][1][i], data_dict[key][0][i], yerr=0.005, marker='.', label = data_dict[key][4][i])	
+                ax.errorbar(data_dict[key][1][i], data_dict[key][0][i], yerr=0.005 + 0.001*data_dict[key][0][i], marker='.', label = data_dict[key][4][i])	
             ax.set_ylim(np.min(data_dict[key][0])-0.1, np.max(data_dict[key][0])+0.1)
-            ax.set_title(f'DAC analysis: {key}')
-            ax.set_xlabel('DAC_value / DAC')
-            ax.set_ylabel('DAC_measured / V')
+            ax.set_title(f'DAC analysis: {key}', fontsize = 30)
+            ax.set_xlabel('DAC_value / DAC', ha='right', x=1)
+            ax.set_ylabel('DAC_measured / V', ha='right', y=1)
             ax.grid()
-            handles, labels = plt.gca().get_legend_handles_labels()
-            order = [3,0,1,2]
-            ax.legend([handles[idx] for idx in order],[labels[idx] for idx in order])
+            ax.minorticks_on()
+            # handles, labels = plt.gca().get_legend_handles_labels()
+            # order = [3,0,1,2]
+            # ax.legend([handles[idx] for idx in order],[labels[idx] for idx in order], loc='best')
             pdf.savefig(fig)
             plt.close(fig)
             
