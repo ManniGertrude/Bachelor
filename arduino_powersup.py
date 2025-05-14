@@ -154,7 +154,7 @@ def read_hw_mean(hw, channel1=1, channel2=2, n = 24):
         hw_data_dict[hw_inputs[i]] = float(np.mean(hw_data_dict[hw_inputs[i]])) 
     return hw_data_dict
 
-def DAC_comparison_plot(path):
+def DAC_comparison_plot(path, mode = 'compare_all'):
     keys = ['IPDAC', 'VNDel', 'VNBiasRec', 'IPBiasRec', 'IBLRes', 'VN', 'INFB', 'VNFoll', 'IPLoad', 'VNComp']
     data_dict = {key:[[],[],[],[],[]] for key in keys}
     
@@ -173,7 +173,7 @@ def DAC_comparison_plot(path):
                     data_dict[key][4].append(measurement)
     
     
-    pdf_path = f'{path}/DAC_comparison.pdf'
+    pdf_path = f'{path}/DAC_comparison_all.pdf'
     with PdfPages(pdf_path) as pdf:
         for key in keys:
             fig, ax = plt.subplots()
@@ -188,9 +188,52 @@ def DAC_comparison_plot(path):
             # handles, labels = plt.gca().get_legend_handles_labels()
             # order = [3,0,1,2]
             # ax.legend([handles[idx] for idx in order],[labels[idx] for idx in order], loc='best')
+            ax.legend(loc='best')
             pdf.savefig(fig)
             plt.close(fig)
-            
+
+
+    config_dict = {
+        'IPDAC': 1,
+        'VNDel': 2,
+        'VNBiasRec': 3,
+        'IPBiasRec': 5,
+        'IBLRes': 10,
+        'VN': 15,
+        'INFB': 16,
+        'VNFoll': 15,
+        'IPLoad': 20,
+        'VNComp': 30
+    }
+    
+    pdf_path = f'{path}/DAC_comparison_config.pdf'
+    with PdfPages(pdf_path) as pdf:
+        for key in keys:
+            fig, ax = plt.subplots()
+            xvalues = []
+            yvalues = []
+            for i in range(len(data_dict[key][0])):
+                for j in range(len(data_dict[key][0][i])):
+                    if j == config_dict[key]:
+                        if data_dict[key][4][i] == 'reference':
+                            xvalues.append(0.0)
+                            yvalues.append(data_dict[key][0][i][j])
+                        else:
+                            xvalues.append(np.float64(data_dict[key][4][i][:-4]))
+                            yvalues.append(data_dict[key][0][i][j])
+            sorted_indices = np.argsort(xvalues)
+            xvalues = np.array(xvalues)[sorted_indices]
+            yvalues = np.array(yvalues)[sorted_indices]
+            ax.errorbar(xvalues, yvalues, yerr=0.005 + 0.001*yvalues, marker='.', label = key)
+            ax.set_ylim(np.min(data_dict[key][0])-0.1, np.max(data_dict[key][0])+0.1)
+            ax.set_title(f'DAC analysis: {key}', fontsize = 30)
+            ax.set_xlabel('fluence / kRad', ha='right', x=1)
+            ax.set_ylabel('DAC_measured / V', ha='right', y=1)
+            ax.grid()
+            ax.minorticks_on()
+            ax.legend(loc='best')
+            pdf.savefig(fig)
+            plt.close(fig)
     
 
 try:
