@@ -80,8 +80,6 @@ def arduino(steps=25, pin_mapping=test_pin_mapping):
         
 
 def arduino_power_plot(path, output_path, infostring=None, save = True):
-    TEXT_COLOR = '#07529a'
-    TITLE_COLOR = '#07529a'
     pdf_path = f'{output_path}/latest.pdf'
     with PdfPages(pdf_path) as pdf:
         timestamps = []
@@ -97,19 +95,19 @@ def arduino_power_plot(path, output_path, infostring=None, save = True):
 
 
                 df = pd.read_csv(f'{root}/{data_file}', skipinitialspace=True)
-                ax2.plot(df['DAC_set_value'].values, 1000*df['vdda_curr'].values, color = 'navy', label='vdda current', marker='o', alpha=0.8)
-                ax2.plot(df['DAC_set_value'].values, 1000*df['vddd_curr'].values, color = 'slateblue', label='vddd current', marker='o', alpha=0.8)    
-                ax1.plot(df['DAC_set_value'].values, df['DAC_measured'].values*5/4.735, color = 'crimson', label='DAC_measured', marker='o', alpha=0.8)
+                ax2.plot(df['DAC_set_value'].values, 1000*df['vdda_curr'].values, color = 'purple', label='vdda current', marker='.', alpha=0.8)
+                ax2.plot(df['DAC_set_value'].values, 1000*df['vddd_curr'].values, color = 'slateblue', label='vddd current', marker='.', alpha=0.8)    
+                ax1.errorbar(df['DAC_set_value'].values, df['DAC_measured'].values*5/4.735, yerr=0.005 + 0.001*df['DAC_measured'].values*5/4.735, color = 'crimson', label='DAC_measured', marker='.', alpha=0.8)
                 
                 handles1, labels1 = ax1.get_legend_handles_labels()
                 handles2, labels2 = ax2.get_legend_handles_labels()
                 handles = handles1 + handles2
                 labels = labels1 + labels2
                 
-                ax1.set_title(f'DAC analysis: {df["DAC_name"][0]}', color = TITLE_COLOR, fontsize=14)
-                ax1.set_xlabel('DAC_value / DAC', fontsize=12)
-                ax1.set_ylabel('DAC_measured / V', color = 'crimson', fontsize=12)
-                ax2.set_ylabel('current / mA', color = 'navy', fontsize = 12)
+                ax1.set_title(f'DAC analysis: {df["DAC_name"][0]}', fontsize=14)
+                ax1.set_xlabel('DAC_value / DAC')
+                ax1.set_ylabel('DAC_measured / V')
+                ax2.set_ylabel('current / mA')
 
                 ax1.tick_params(axis='y', labelcolor='crimson')
                 ax2.tick_params(axis='y', labelcolor='navy')
